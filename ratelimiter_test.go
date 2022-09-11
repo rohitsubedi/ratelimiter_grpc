@@ -20,6 +20,7 @@ const (
 	redisPassword      = "redis_password"
 )
 
+// CUSTOM LEVELED LOGGER
 type logger struct{}
 
 func newLogger() LeveledLogger {
@@ -38,6 +39,7 @@ func (lo *logger) Info(args ...interface{}) {
 
 }
 
+// CUSTOM SERVER STREAM
 type serverStream struct {
 	ctx context.Context
 }
@@ -75,14 +77,13 @@ var (
 
 		return ""
 	}
+	rateLimitInfo = &RateLimitingInfo{
+		LimitKeyFunction:             rateLimitKeyFunc,
+		TimeFrameDurationToCheck:     2 * time.Second,
+		MaxRequestAllowedInTimeFrame: 10,
+		LimitExceedError:             fmt.Errorf("rate limit exceeded"),
+	}
 )
-
-var rateLimitInfo = &RateLimitingInfo{
-	LimitKeyFunction:             rateLimitKeyFunc,
-	TimeFrameDurationToCheck:     2 * time.Second,
-	MaxRequestAllowedInTimeFrame: 10,
-	LimitExceedError:             fmt.Errorf("rate limit exceeded"),
-}
 
 type config struct{}
 
