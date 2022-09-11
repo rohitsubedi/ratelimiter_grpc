@@ -90,7 +90,7 @@ func (l *limiter) streamRateLimit(conf ConfigInterface) func(srv interface{}, ss
 		}
 
 		enabled, rateLimitInfo := conf.IsMethodRateLimited(info.FullMethod)
-		if !enabled {
+		if !enabled || rateLimitInfo == nil {
 			return handler(srv, ss)
 		}
 
@@ -131,7 +131,7 @@ func (l *limiter) unaryRateLimit(conf ConfigInterface) func(ctx context.Context,
 		}
 
 		enabled, rateLimitInfo := conf.IsMethodRateLimited(info.FullMethod)
-		if !enabled {
+		if !enabled || rateLimitInfo == nil {
 			return handler(ctx, req)
 		}
 
