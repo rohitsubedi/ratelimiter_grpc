@@ -2,6 +2,7 @@ package ratelimiter_grpc
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 type RateLimitKeyFunc func(ctx context.Context) string
 type RateLimitingInfo struct {
-	LimitKeyFunction             RateLimitKeyFunc
+	LimitKeyValue                string
 	TimeFrameDurationToCheck     time.Duration
 	MaxRequestAllowedInTimeFrame int
 	LimitExceedError             error
@@ -20,12 +21,10 @@ type RateLimitingInfo struct {
 const (
 	ErrMsgPossibleBruteForceAttack = "Possible Brute Force Attack"
 	msgRateLimitKeyEmpty           = "Rate Limit key is empty"
-	msgRateLimitKeyFuncIsNil       = "Rate Limit key function is nil"
-	cachePathKeySeparator          = "||||"
 )
 
 type ConfigInterface interface {
-	IsMethodRateLimited(fullMethodName string) (bool, *RateLimitingInfo)
+	IsMethodRateLimited(ctx context.Context, fullMethodName string) (bool, *RateLimitingInfo)
 }
 
 type cacheInterface interface {
@@ -40,6 +39,7 @@ type LeveledLogger interface {
 }
 
 type Limiter interface {
+	SetLogger(logger LeveledLogger)
 	UnaryRateLimit(conf ConfigInterface) grpc.UnaryServerInterceptor
 	StreamRateLimit(conf ConfigInterface) grpc.StreamServerInterceptor
 }
@@ -85,24 +85,19 @@ func (l *limiter) StreamRateLimit(conf ConfigInterface) grpc.StreamServerInterce
 			return handler(srv, ss)
 		}
 
-		enabled, rateLimitInfo := conf.IsMethodRateLimited(info.FullMethod)
+		ctx := ss.Context()
+		enabled, rateLimitInfo := conf.IsMethodRateLimited(ctx, info.FullMethod)
 		if !enabled || rateLimitInfo == nil {
 			return handler(srv, ss)
 		}
 
-		ctx := ss.Context()
-		if rateLimitInfo.LimitKeyFunction == nil {
-			logInfo(ctx, l.logger, msgRateLimitKeyFuncIsNil)
-			return handler(srv, ss)
-		}
-
-		rateLimitKey := rateLimitInfo.LimitKeyFunction(ctx)
+		rateLimitKey := rateLimitInfo.LimitKeyValue
 		if rateLimitKey == "" {
 			logInfo(ctx, l.logger, msgRateLimitKeyEmpty)
 			return handler(srv, ss)
 		}
 
-		cacheKey := fmt.Sprintf("%s%s%s", info.FullMethod, cachePathKeySeparator, rateLimitKey)
+		cacheKey := fmt.Sprintf("%x", sha1.Sum([]byte(info.FullMethod+rateLimitKey)))
 		limitCount := l.cache.getCount(cacheKey, rateLimitInfo.TimeFrameDurationToCheck)
 
 		if limitCount >= rateLimitInfo.MaxRequestAllowedInTimeFrame {
@@ -122,23 +117,18 @@ func (l *limiter) UnaryRateLimit(conf ConfigInterface) grpc.UnaryServerIntercept
 			return handler(ctx, req)
 		}
 
-		enabled, rateLimitInfo := conf.IsMethodRateLimited(info.FullMethod)
+		enabled, rateLimitInfo := conf.IsMethodRateLimited(ctx, info.FullMethod)
 		if !enabled || rateLimitInfo == nil {
 			return handler(ctx, req)
 		}
 
-		if rateLimitInfo.LimitKeyFunction == nil {
-			logInfo(ctx, l.logger, msgRateLimitKeyFuncIsNil)
-			return handler(ctx, req)
-		}
-
-		rateLimitKey := rateLimitInfo.LimitKeyFunction(ctx)
+		rateLimitKey := rateLimitInfo.LimitKeyValue
 		if rateLimitKey == "" {
 			logInfo(ctx, l.logger, msgRateLimitKeyEmpty)
 			return handler(ctx, req)
 		}
 
-		cacheKey := fmt.Sprintf("%s%s%s", info.FullMethod, cachePathKeySeparator, rateLimitKey)
+		cacheKey := fmt.Sprintf("%x", sha1.Sum([]byte(info.FullMethod+rateLimitKey)))
 		limitCount := l.cache.getCount(cacheKey, rateLimitInfo.TimeFrameDurationToCheck)
 
 		if limitCount >= rateLimitInfo.MaxRequestAllowedInTimeFrame {
