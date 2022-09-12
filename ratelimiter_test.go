@@ -101,7 +101,7 @@ func (c *notEnabledConfig) IsMethodRateLimited(_ string) (bool, *RateLimitingInf
 func TestNewRateLimiterUsingMemory_UnaryRateLimit(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
-	fn := limiter.unaryRateLimit(new(config))
+	fn := limiter.UnaryRateLimit(new(config))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -121,7 +121,7 @@ func TestNewRateLimiterUsingMemory_UnaryRateLimit(t *testing.T) {
 func TestNewRateLimiterUsingMemory_UnaryRateLimit_NotEnabled(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second)}
-	fn := limiter.unaryRateLimit(new(notEnabledConfig))
+	fn := limiter.UnaryRateLimit(new(notEnabledConfig))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -137,7 +137,7 @@ func TestNewRateLimiterUsingMemory_UnaryRateLimit_LimitKeyFnNil(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = nil
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second)}
 	conf := new(config)
-	fn := limiter.unaryRateLimit(conf)
+	fn := limiter.UnaryRateLimit(conf)
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -153,7 +153,7 @@ func TestNewRateLimiterUsingMemory_UnaryRateLimit_LimitKeyIsEmpty(t *testing.T) 
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
 	conf := new(config)
-	fn := limiter.unaryRateLimit(conf)
+	fn := limiter.UnaryRateLimit(conf)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		_, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -167,7 +167,7 @@ func TestNewRateLimiterUsingMemory_UnaryRateLimit_LimitKeyIsEmpty(t *testing.T) 
 func TestNewRateLimiterUsingMemory_UnaryRateLimit_EmptyConf(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
-	fn := limiter.unaryRateLimit(nil)
+	fn := limiter.UnaryRateLimit(nil)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		_, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -182,7 +182,7 @@ func TestNewRateLimiterUsingMemory_UnaryRateLimit_EmptyConf(t *testing.T) {
 func TestNewRateLimiterUsingMemory_StreamRateLimit(t *testing.T) {
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
 	limiter.SetLogger(nil)
-	fn := limiter.streamRateLimit(new(config))
+	fn := limiter.StreamRateLimit(new(config))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -202,7 +202,7 @@ func TestNewRateLimiterUsingMemory_StreamRateLimit(t *testing.T) {
 func TestNewRateLimiterUsingMemory_StreamRateLimit_NotEnabled(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
-	fn := limiter.streamRateLimit(new(notEnabledConfig))
+	fn := limiter.StreamRateLimit(new(notEnabledConfig))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -218,7 +218,7 @@ func TestNewRateLimiterUsingMemory_StreamRateLimit_LimitKeyFnNil(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = nil
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
 	conf := new(config)
-	fn := limiter.streamRateLimit(conf)
+	fn := limiter.StreamRateLimit(conf)
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -234,7 +234,7 @@ func TestNewRateLimiterUsingMemory_StreamRateLimit_LimitKeyIsEmpty(t *testing.T)
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
 	conf := new(config)
-	fn := limiter.streamRateLimit(conf)
+	fn := limiter.StreamRateLimit(conf)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		err := fn(nil, &serverStream{ctx: context.TODO()}, &grpc.StreamServerInfo{FullMethod: "test"}, func(srv interface{}, stream grpc.ServerStream) error {
@@ -248,7 +248,7 @@ func TestNewRateLimiterUsingMemory_StreamRateLimit_LimitKeyIsEmpty(t *testing.T)
 func TestNewRateLimiterUsingMemory_StreamRateLimit_EmptyConfig(t *testing.T) {
 	rateLimitInfo.LimitKeyFunction = rateLimitKeyFunc
 	limiter := &limiter{cache: newMemoryCache(2 * time.Second), logger: log.Default()}
-	fn := limiter.streamRateLimit(nil)
+	fn := limiter.StreamRateLimit(nil)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		err := fn(nil, &serverStream{ctx: context.TODO()}, &grpc.StreamServerInfo{FullMethod: "test"}, func(srv interface{}, stream grpc.ServerStream) error {
@@ -264,7 +264,7 @@ func TestNewRateLimiterUsingRedis_UnaryRateLimit(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
-	fn := limiter.unaryRateLimit(new(config))
+	fn := limiter.UnaryRateLimit(new(config))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -286,7 +286,7 @@ func TestNewRateLimiterUsingRedis_UnaryRateLimit_NotEnabled(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache}
-	fn := limiter.unaryRateLimit(new(notEnabledConfig))
+	fn := limiter.UnaryRateLimit(new(notEnabledConfig))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -304,7 +304,7 @@ func TestNewRateLimiterUsingRedis_UnaryRateLimit_LimitKeyFnNil(t *testing.T) {
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
 	conf := new(config)
-	fn := limiter.unaryRateLimit(conf)
+	fn := limiter.UnaryRateLimit(conf)
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -322,7 +322,7 @@ func TestNewRateLimiterUsingRedis_UnaryRateLimit_LimitKeyIsEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
 	conf := new(config)
-	fn := limiter.unaryRateLimit(conf)
+	fn := limiter.UnaryRateLimit(conf)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		_, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -338,7 +338,7 @@ func TestNewRateLimiterUsingRedis_UnaryRateLimit_EmptyConfig(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
-	fn := limiter.unaryRateLimit(nil)
+	fn := limiter.UnaryRateLimit(nil)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		_, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{FullMethod: "test"}, func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -354,7 +354,7 @@ func TestNewRateLimiterUsingRedis_StreamRateLimit(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: log.Default()}
-	fn := limiter.streamRateLimit(new(config))
+	fn := limiter.StreamRateLimit(new(config))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -376,7 +376,7 @@ func TestNewRateLimiterUsingRedis_StreamRateLimit_NotEnabled(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache}
-	fn := limiter.streamRateLimit(new(notEnabledConfig))
+	fn := limiter.StreamRateLimit(new(notEnabledConfig))
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -394,7 +394,7 @@ func TestNewRateLimiterUsingRedis_StreamRateLimit_LimitKeyFnNil(t *testing.T) {
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
 	conf := new(config)
-	fn := limiter.streamRateLimit(conf)
+	fn := limiter.StreamRateLimit(conf)
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(rateLimitHeaderKey, uuid.New().String()))
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
@@ -412,7 +412,7 @@ func TestNewRateLimiterUsingRedis_StreamRateLimit_LimitKeyIsEmpty(t *testing.T) 
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
 	conf := new(config)
-	fn := limiter.streamRateLimit(conf)
+	fn := limiter.StreamRateLimit(conf)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		err := fn(nil, &serverStream{ctx: context.TODO()}, &grpc.StreamServerInfo{FullMethod: "test"}, func(srv interface{}, stream grpc.ServerStream) error {
@@ -428,7 +428,7 @@ func TestNewRateLimiterUsingRedis_StreamRateLimit_EmptyConfig(t *testing.T) {
 	cache, err := newRedisCache(redisHost, redisPassword)
 	assert.NoError(t, err)
 	limiter := &limiter{cache: cache, logger: newLogger()}
-	fn := limiter.streamRateLimit(nil)
+	fn := limiter.StreamRateLimit(nil)
 
 	for i := 0; i < 2*rateLimitInfo.MaxRequestAllowedInTimeFrame; i++ {
 		err := fn(nil, &serverStream{ctx: context.TODO()}, &grpc.StreamServerInfo{FullMethod: "test"}, func(srv interface{}, stream grpc.ServerStream) error {

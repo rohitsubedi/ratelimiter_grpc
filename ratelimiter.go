@@ -40,8 +40,8 @@ type LeveledLogger interface {
 }
 
 type Limiter interface {
-	UnaryRateLimit(conf ConfigInterface) grpc.ServerOption
-	StreamRateLimit(conf ConfigInterface) grpc.ServerOption
+	UnaryRateLimit(conf ConfigInterface) grpc.UnaryServerInterceptor
+	StreamRateLimit(conf ConfigInterface) grpc.StreamServerInterceptor
 }
 
 type limiter struct {
@@ -79,11 +79,7 @@ func (l *limiter) SetLogger(logger LeveledLogger) {
 	l.logger = logger
 }
 
-func (l *limiter) StreamRateLimit(conf ConfigInterface) grpc.ServerOption {
-	return grpc.StreamInterceptor(l.streamRateLimit(conf))
-}
-
-func (l *limiter) streamRateLimit(conf ConfigInterface) func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func (l *limiter) StreamRateLimit(conf ConfigInterface) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if conf == nil {
 			return handler(srv, ss)
@@ -120,11 +116,7 @@ func (l *limiter) streamRateLimit(conf ConfigInterface) func(srv interface{}, ss
 	}
 }
 
-func (l *limiter) UnaryRateLimit(conf ConfigInterface) grpc.ServerOption {
-	return grpc.UnaryInterceptor(l.unaryRateLimit(conf))
-}
-
-func (l *limiter) unaryRateLimit(conf ConfigInterface) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func (l *limiter) UnaryRateLimit(conf ConfigInterface) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if conf == nil {
 			return handler(ctx, req)

@@ -42,7 +42,8 @@ func main() {
 
 	memLimiter := ratelimiter_grpc.NewRateLimiterUsingMemory(10 * time.Minute)
 	// redisLimiter, err := ratelimiter_grpc.NewRateLimiterUsingMemory(host, password)
-	srv := grpc.NewServer(memLimiter.UnaryRateLimit(conf), memLimiter.StreamRateLimit(conf))
+	// You can chain multiple interceptor as needed. For ex. You can add Authorization interceptor etc
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(memLimiter.UnaryRateLimit(conf)), grpc.ChainStreamInterceptor(memLimiter.StreamRateLimit(conf)))
 	handler := &someHandler{}
 	pb.RegisterSomeService(srv, &handler)
 	reflection.Register(srv)
