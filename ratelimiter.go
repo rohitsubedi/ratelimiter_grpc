@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type RateLimitKeyFunc func(ctx context.Context) string
 type RateLimitingInfo struct {
 	LimitKeyValue                string
 	TimeFrameDurationToCheck     time.Duration
